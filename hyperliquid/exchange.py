@@ -33,9 +33,12 @@ from hyperliquid.utils.signing import (
     sign_usd_class_transfer_action,
     sign_usd_transfer_action,
     sign_user_dex_abstraction_action,
+    sign_user_set_abstraction_action,
     sign_withdraw_from_bridge_action,
 )
 from hyperliquid.utils.types import (
+    Abstraction,
+    AgentAbstraction,
     Any,
     BuilderInfo,
     Cloid,
@@ -1139,6 +1142,26 @@ class Exchange(API):
             timestamp,
         )
 
+    def agent_set_abstraction(self, abstraction: AgentAbstraction) -> Any:
+        timestamp = get_timestamp_ms()
+        action = {
+            "type": "agentSetAbstraction",
+            "abstraction": abstraction,
+        }
+        signature = sign_l1_action(
+            self.wallet,
+            action,
+            self.vault_address,
+            timestamp,
+            self.expires_after,
+            self.base_url == MAINNET_API_URL,
+        )
+        return self._post_action(
+            action,
+            signature,
+            timestamp,
+        )
+
     def user_dex_abstraction(self, user: str, enabled: bool) -> Any:
         timestamp = get_timestamp_ms()
         action = {
@@ -1154,8 +1177,31 @@ class Exchange(API):
             timestamp,
         )
 
+    def user_set_abstraction(self, user: str, abstraction: Abstraction) -> Any:
+        timestamp = get_timestamp_ms()
+        action = {
+            "type": "userSetAbstraction",
+            "user": user.lower(),
+            "abstraction": abstraction,
+            "nonce": timestamp,
+        }
+        signature = sign_user_set_abstraction_action(self.wallet, action, self.base_url == MAINNET_API_URL)
+        return self._post_action(
+            action,
+            signature,
+            timestamp,
+        )
+
     def noop(self, nonce):
         action = {"type": "noop"}
+        signature = sign_l1_action(
+            self.wallet, action, self.vault_address, nonce, self.expires_after, self.base_url == MAINNET_API_URL
+        )
+        return self._post_action(action, signature, nonce)
+
+    def gossip_priority_bid(self, slot_id, ip, max_gas):
+        nonce = get_timestamp_ms()
+        action = {"type": "gossipPriorityBid", "slotId": slot_id, "ip": ip, "maxGas": max_gas}
         signature = sign_l1_action(
             self.wallet, action, self.vault_address, nonce, self.expires_after, self.base_url == MAINNET_API_URL
         )

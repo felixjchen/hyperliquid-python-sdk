@@ -39,14 +39,16 @@ class Info(API):
         self.name_to_coin = {}
         self.asset_to_sz_decimals = {}
 
+        token_by_index = {token["index"]: token for token in spot_meta["tokens"]}
+
         # spot assets start at 10000
         for spot_info in spot_meta["universe"]:
             asset = spot_info["index"] + 10000
             self.coin_to_asset[spot_info["name"]] = asset
             self.name_to_coin[spot_info["name"]] = spot_info["name"]
             base, quote = spot_info["tokens"]
-            base_info = spot_meta["tokens"][base]
-            quote_info = spot_meta["tokens"][quote]
+            base_info = token_by_index[base]
+            quote_info = token_by_index[quote]
             self.asset_to_sz_decimals[asset] = base_info["szDecimals"]
             name = f'{base_info["name"]}/{quote_info["name"]}'
             if name not in self.name_to_coin:
@@ -635,6 +637,9 @@ class Info(API):
 
     def query_user_dex_abstraction_state(self, user: str) -> Any:
         return self.post("/info", {"type": "userDexAbstraction", "user": user})
+
+    def query_user_abstraction_state(self, user: str) -> Any:
+        return self.post("/info", {"type": "userAbstraction", "user": user})
 
     def historical_orders(self, user: str) -> Any:
         """Retrieve a user's historical orders.
